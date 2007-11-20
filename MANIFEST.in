@@ -1,0 +1,2 @@
+recursive-include eyvind/public *
+recursive-include eyvind/templates *
