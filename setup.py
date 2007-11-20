@@ -7,10 +7,11 @@ except ImportError:
 
 setup(
     name='eyvind',
-    version="",
-    #description='',
-    #author='',
-    #author_email='',
+    version="0.1",
+    description='Eyvind is an authentication middleware and application for openplans.',
+    author='David Turner',
+    author_email='novalis@openplans.org',
+    license = "GPLv3 or any later version",
     #url='',
     install_requires=["Pylons>=0.9.6.1"],
     packages=find_packages(exclude=['ez_setup']),
