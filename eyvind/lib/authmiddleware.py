@@ -36,21 +36,27 @@ from paste.request import construct_url
 from beaker.session import SessionMiddleware
 
 import time
+import base64
 
-def clean_environ(environ):
-    environ['REMOTE_USER'] = ''
-    
-    for key in environ.keys():
-        if key.upper().startswith("HTTP_X_OPENPLANS"):
-            del environ[key]
+import hmac
+import sha
 
+from urllib import quote, unquote, urlencode
+from Cookie import BaseCookie
 
-class AuthenticationMiddleware(object):
+def get_secret(conf):
+    secret_filename = conf['topp_secret_filename']
+    f = open(secret_filename)
+    secret = f.readline().strip()
+    f.close()
+    return secret
+
+class _AuthenticationMiddleware(object):
     def __init__(self, app, app_conf):
         self.app = app
+        self.secret = get_secret(app_conf)
         
     def authenticate(self, environ):
-
         try:
             cookie = BaseCookie(environ['HTTP_COOKIE'])
             morsel = cookie['__ac']
@@ -59,14 +65,15 @@ class AuthenticationMiddleware(object):
 
         try:
             username, auth = base64.decodestring(unquote(morsel.value)).split("\0")
+
         except ValueError:
             raise BadCookieError
-            
+
         if not auth == hmac.new(self.secret, username, sha).hexdigest():
             return False
 
         environ['REMOTE_USER'] = username
-        environ['X-Openplans-Username'] = username
+        environ['HTTP_X_OPENPLANS_USERNAME'] = username
 
 #         session = environ['beaker.session']
 #         if not 'username' in session:
@@ -91,16 +98,12 @@ class AuthenticationMiddleware(object):
         return status.startswith('401') or status.startswith('403')
 
     def __call__(self, environ, start_response):
-        clean_environ(environ)
         
         if environ['PATH_INFO'].strip("/").startswith("_debug"):
             return self.app(environ, start_response)
 
         #set up environ['REMOTE_USER']
         self.authenticate(environ)
-
-        #check if this needs to go into the Eyvind app
-        print environ['PATH_INFO']
 
         status, headers, body = intercept_output(environ, self.app, self.needs_redirection, start_response)
 
@@ -118,16 +121,6 @@ class AuthenticationMiddleware(object):
         else:
             return body
 
-def AuthenticationMiddleware(app):
-    return SessionMiddleware(_AuthenticationMiddleware(app))
+def AuthenticationMiddleware(app, app_conf):
+    return SessionMiddleware(_AuthenticationMiddleware(app, app_conf))
 
-
-
-def make_cookie(username):
-    secret = get_secret()
-    auth = hmac.new(secret, username, sha).hexdigest()
-    cookie = quote(("%s\0%s" % (username, auth)).encode("base64")).strip()
-    return ('__ac', cookie)
-
-def logout():
-    return ('__ac', 'loggedout')
