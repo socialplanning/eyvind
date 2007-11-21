@@ -45,7 +45,10 @@ from urllib import quote, unquote, urlencode
 from Cookie import BaseCookie
 
 def get_secret(conf):
-    secret_filename = conf['topp_secret_filename']
+    try:
+        secret_filename = conf['topp_secret_filename']
+    except KeyError:
+        return '' #no secret, so all auth will fail
     f = open(secret_filename)
     secret = f.readline().strip()
     f.close()
