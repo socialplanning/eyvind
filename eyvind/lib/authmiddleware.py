@@ -33,7 +33,7 @@
 from paste.wsgilib import intercept_output
 from paste.request import construct_url
 
-from beaker.session import SessionMiddleware
+from beaker.middleware import SessionMiddleware
 
 import time
 import base64
@@ -43,6 +43,8 @@ import sha
 
 from urllib import quote, unquote, urlencode
 from Cookie import BaseCookie
+
+from signedheaders import add_signed_header
 
 def get_secret(conf):
     try:
@@ -75,8 +77,7 @@ class _AuthenticationMiddleware(object):
         if not auth == hmac.new(self.secret, username, sha).hexdigest():
             return False
 
-        environ['REMOTE_USER'] = username
-        environ['HTTP_X_OPENPLANS_USERNAME'] = username
+        add_signed_header(environ, 'REMOTE_USER', username, self.secret)
 
 #         session = environ['beaker.session']
 #         if not 'username' in session:

@@ -1,17 +1,20 @@
 import paste
 
-from eyvind.lib.authmiddleware import AuthenticationMiddleware
-
+from eyvind.lib.authmiddleware import AuthenticationMiddleware, get_secret
+from signedheaders import HeaderSignatureCheckingMiddleware
 import os
 
 secret_filename = os.path.join(os.path.dirname(__file__), 'secret')
+conf = {'topp_secret_filename' : secret_filename}
+secret = get_secret(conf)
 
 def un_app(environ, start_response):
     start_response("200 OK", [('Content-Type', 'text/plain')])
-    return ["Username = %s" % environ.get('HTTP_X_OPENPLANS_USERNAME', '0')]
+    return ["Username = %s" % environ.get('REMOTE_USER', '0')]
 
 def test_auth_middleware():
-    app = AuthenticationMiddleware(un_app, {'topp_secret_filename' : secret_filename})
+    app = HeaderSignatureCheckingMiddleware(un_app, secret)
+    app = AuthenticationMiddleware(app, conf)
     app = paste.fixture.TestApp(app)
     res = app.get("/")
     assert res.body == "Username = 0"

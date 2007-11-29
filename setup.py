@@ -13,7 +13,7 @@ setup(
     author_email='novalis@openplans.org',
     license = "GPLv3 or any later version",
     #url='',
-    install_requires=["Pylons>=0.9.6.1"],
+    install_requires=["Pylons>=0.9.6.1", "signedheaders"],
     packages=find_packages(exclude=['ez_setup']),
     include_package_data=True,
     test_suite='nose.collector',
@@ -22,6 +22,9 @@ setup(
     #        ('**.py', 'python', None),
     #        ('templates/**.mako', 'mako', None),
     #        ('public/**', 'ignore', None)]},
+    dependency_links = [
+      "https://svn.openplans.org/svn/signedheaders/trunk#egg=signedheaders-dev",
+      ],    
     entry_points="""
     [paste.app_factory]
     main = eyvind.config.middleware:make_app
