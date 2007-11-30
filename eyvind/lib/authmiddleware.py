@@ -110,15 +110,15 @@ class _AuthenticationMiddleware(object):
         self.authenticate(environ)
 
         status, headers, body = intercept_output(environ, self.app, self.needs_redirection, start_response)
-
+            
         if status and status.startswith("401"):
-            location = '"/login"?came_from=%s' % (location, quote(url))
+            url = construct_url(environ)            
+            location = '/login?came_from=%s' % quote(url)
         else:
             location = "/"
             
         if status:
             status = "303 See Other"
-            url = construct_url(environ)
             headers = [('Location', location), ('Content-Type', 'text/html')]
             start_response(status, headers)
             return []
