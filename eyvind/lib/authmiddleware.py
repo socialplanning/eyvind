@@ -112,10 +112,10 @@ class _AuthenticationMiddleware(object):
         status, headers, body = intercept_output(environ, self.app, self.needs_redirection, start_response)
             
         if status and status.startswith("401"):
-            url = construct_url(environ)            
+            url = construct_url(environ)
             location = '/login?came_from=%s' % quote(url)
         else:
-            location = "/"
+            location = "/?portal_status_message=You+have+insufficient+privileges."
             
         if status:
             status = "303 See Other"
