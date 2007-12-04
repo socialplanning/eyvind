@@ -12,6 +12,8 @@ from pylons.wsgiapp import PylonsApp
 
 from eyvind.config.environment import load_environment
 
+from signedheaders import HeaderSignatureCheckingMiddleware
+
 def make_app(global_conf, full_stack=True, **app_conf):
     """Create a Pylons WSGI application and return it
 
@@ -37,6 +39,8 @@ def make_app(global_conf, full_stack=True, **app_conf):
     app = PylonsApp()
 
     # CUSTOM MIDDLEWARE HERE (filtered by error handling middlewares)
+
+    app = HeaderSignatureCheckingMiddleware(app, app_conf)
 
     if asbool(full_stack):
         # Handle Python exceptions

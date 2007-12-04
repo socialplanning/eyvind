@@ -20,6 +20,14 @@ class BaseController(WSGIController):
         # WSGIController.__call__ dispatches to the Controller method
         # the request is routed to. This routing information is
         # available in environ['pylons.routes_dict']
+
+        try:
+            if not environ['PATH_INFO'].startswith("/error"):
+                c.status_message = session['status_message']
+                del session['status_message']
+                session.save()            
+        except KeyError:
+            pass        
         return WSGIController.__call__(self, environ, start_response)
 
 # Include the '_' function in the public names

@@ -113,7 +113,7 @@ class _AuthenticationMiddleware(object):
             
         if status and status.startswith("401"):
             url = construct_url(environ)
-            location = '/login?came_from=%s' % quote(url)
+            location = '/auth/login?came_from=%s' % quote(url)
         else:
             location = "/?portal_status_message=You+have+insufficient+privileges."
             

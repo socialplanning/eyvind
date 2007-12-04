@@ -1,5 +1,13 @@
 from eyvind.lib.base import *
 
+from formencode import Schema, Invalid
+from formencode.validators import *
+
+from pylons.decorators import validate
+from pylons.decorators.rest import dispatch_on
+
+from paste.wsgiwrappers import WSGIResponse
+import re
 
 class UniqueUsername(String):
     messages = {
@@ -49,110 +57,127 @@ class LoginForm(Schema):
     filter_extra_fields = True
     username = String()
     password = String()
-    no_expire_cookie = formencode.validators.StringBoolean(if_missing=False)
+    came_from = String(not_empty=False, if_missing="")
+    no_expire_cookie = StringBoolean(if_missing=False)
+
+#this will be replaced by something from TeamRoller later.
+import httplib2
+from urllib import urlencode
+def confirm_password(username, password):
+    h = httplib2.Http()
+    url = "%s/people/%s/get-hash" % (config['openplans_instance'], username)
+    
+    data = dict(__ac_password = password)
+    body = urlencode(data)
+    resp, content = h.request(url, method="POST", body=body, redirections=0)
+    if content:
+        return content
+    else:
+        return False
 
 class UserController(BaseController):
 
     
-    @dispatch_on(POST='do_signup')
-    def join(self):
-        if c.username:
-            return h.redirect_to("/")
-        return render_response('user/show_signup.mako')
+#     @dispatch_on(POST='do_signup')
+#     def join(self):
+#         if c.username:
+#             return h.redirect_to("/")
+#         return render('user/show_signup.mako')
 
-    def confirm(self):
-        user = User.byConfirm_key(request.params['key'])
-        if user.confirmed:
-            c.status_message="You have tried to activate an account that is not pending confirmation. Please sign in normally."
-            return h.redirect_to("/")
-        c.user = user
-        c.username = user.username
-        user.confirmed = True        
-        response.set_cookie(*cookieauth.make_cookie(user.username))
-        return h.redirect_to(action="profile_edit", first_login=True)
+#     def confirm(self):
+#         user = User.byConfirm_key(request.params['key'])
+#         if user.confirmed:
+#             c.status_message="You have tried to activate an account that is not pending confirmation. Please sign in normally."
+#             return h.redirect_to("/")
+#         c.user = user
+#         c.username = user.username
+#         user.confirmed = True        
+#         response.set_cookie(*cookieauth.make_cookie(user.username))
+#         return h.redirect_to(action="profile_edit", first_login=True)
 
-    def do_signup(self):
-        if not request.params.get('task|validate'):
-            return self.signup_real()
+#     def do_signup(self):
+#         if not request.params.get('task|validate'):
+#             return self.signup_real()
 
-        try:
-            self.form_result = SignupForm().to_python(request.params)
-            errors = {}
-            #return good response
-        except Invalid, e:
-            errors = e.unpack_errors(False, '.', '-')
+#         try:
+#             self.form_result = SignupForm().to_python(request.params)
+#             errors = {}
+#             #return good response
+#         except Invalid, e:
+#             errors = e.unpack_errors(False, '.', '-')
 
-        actual_errors = dict(("oc-%s-error" % field, {'action': 'copy', 'html': '', 'effects': 'highlight'}) for field in request.params)
-        for field, message in errors.items():
-            if message == "Missing value":
-                continue
-            actual_errors["oc-%s-error" % field] = {'action': 'copy', 'html': message, 'effects': 'highlight'}
-        return h.oc_json_response(actual_errors)
+#         actual_errors = dict(("oc-%s-error" % field, {'action': 'copy', 'html': '', 'effects': 'highlight'}) for field in request.params)
+#         for field, message in errors.items():
+#             if message == "Missing value":
+#                 continue
+#             actual_errors["oc-%s-error" % field] = {'action': 'copy', 'html': message, 'effects': 'highlight'}
+#         return h.oc_json_response(actual_errors)
 
-    @validate(schema=SignupForm(), form='join')
-    def signup_real(self):
-        p = dict(self.form_result)
-        del p['confirm_password']
-        user = create_user(**p)
-        c.status_message = "Thanks for joining OpenPlans, %s! A confirmation email has been sent to you with instructions on activating your account." % user.username
-        return MainController().index()
+#     @validate(schema=SignupForm(), form='join')
+#     def signup_real(self):
+#         p = dict(self.form_result)
+#         del p['confirm_password']
+#         user = create_user(**p)
+#         c.status_message = "Thanks for joining OpenPlans, %s! A confirmation email has been sent to you with instructions on activating your account." % user.username
+#         return MainController().index()
 
-    @dispatch_on(POST='do_forgot')
-    def forgot(self):
-        return render_response('user/show_login.mako')
+#     @dispatch_on(POST='do_forgot')
+#     def forgot(self):
+#         return render('user/show_login.mako')
 
-    def do_forgot(self):
-        username = request.params['username']
-        #first, try it as a username:
-        try:
-            user = User.byUsername(username)
-            c.status_message = "Your username is %s. If you would like to reset your password, please check your email account for further instructions." % username
-        except SQLObjectNotFound:
-            user = User.selectBy(email=username)
-            try:
-                user = user[0]
-                c.status_message = "Your username is %s. If you would like to reset your password, please check your email account for further instructions." % user.username
-            except IndexError:
-                c.status_message = "We can't find your account. This could be because you have not yet completed your email confirmation."
-                user = None
+#     def do_forgot(self):
+#         username = request.params['username']
+#         #first, try it as a username:
+#         try:
+#             user = User.byUsername(username)
+#             c.status_message = "Your username is %s. If you would like to reset your password, please check your email account for further instructions." % username
+#         except SQLObjectNotFound:
+#             user = User.selectBy(email=username)
+#             try:
+#                 user = user[0]
+#                 c.status_message = "Your username is %s. If you would like to reset your password, please check your email account for further instructions." % user.username
+#             except IndexError:
+#                 c.status_message = "We can't find your account. This could be because you have not yet completed your email confirmation."
+#                 user = None
 
-        if user and user.confirmed:
-            user.confirm_key = uuid4()
-            body = """
-You requested a password reminder for your OpenPlans account. If you did not request this information, please ignore this message.
+#         if user and user.confirmed:
+#             user.confirm_key = uuid4()
+#             body = """
+# You requested a password reminder for your OpenPlans account. If you did not request this information, please ignore this message.
 
-To change your password, please visit the following URL:
-http://localhost:5000/reset-password?key=%s
-""" % (user.confirm_key)
-            send_mail('greetings@openplans.org', user.email, 'OpenPlans - Password reminder', body)
-        return render_response('user/show_login.mako')
+# To change your password, please visit the following URL:
+# http://localhost:5000/reset-password?key=%s
+# """ % (user.confirm_key)
+#             send_mail('greetings@openplans.org', user.email, 'OpenPlans - Password reminder', body)
+#         return render('user/show_login.mako')
 
-    @dispatch_on(POST='do_reset_password')
-    def reset_password(self):
-        c.key = request.params['key']
-        return render_response('user/newpassword.mako')
+#     @dispatch_on(POST='do_reset_password')
+#     def reset_password(self):
+#         c.key = request.params['key']
+#         return render('user/newpassword.mako')
 
-    def do_reset_password(self):
-        try:
-            user = User.byUsername(request.params['userid'])
-        except SQLObjectNotFound:
-            c.status_message = 'There is no member named "%s".' % request.params['userid']
-            return h.redirect_to("/reset-password", key=c.key)
+#     def do_reset_password(self):
+#         try:
+#             user = User.byUsername(request.params['userid'])
+#         except SQLObjectNotFound:
+#             c.status_message = 'There is no member named "%s".' % request.params['userid']
+#             return h.redirect_to("/reset-password", key=c.key)
 
-        key = request.params['key']
-        if not user.confirm_key == key:
-            c.status_message = 'Password reset attempt failed. Did you mistype your username or password?'
-            return h.redirect_to("/") #the key is wrong.  They don't get another chance
+#         key = request.params['key']
+#         if not user.confirm_key == key:
+#             c.status_message = 'Password reset attempt failed. Did you mistype your username or password?'
+#             return h.redirect_to("/") #the key is wrong.  They don't get another chance
 
-        if not request.params["password"] == request.params["password2"]:
-            c.status_message = 'Passwords do not match'
-            return h.redirect_to("/reset-password", key=c.key)
+#         if not request.params["password"] == request.params["password2"]:
+#             c.status_message = 'Passwords do not match'
+#             return h.redirect_to("/reset-password", key=c.key)
 
-        c.user = user # log user in so we can change password
-        c.username = user.username        
-        user.password = request.params["password"]
-        c.status_message = 'Welcome! Your password has been reset, and you are now signed in.'
-        return h.redirect_to("/people/%s/account" % c.username)
+#         c.user = user # log user in so we can change password
+#         c.username = user.username        
+#         user.password = request.params["password"]
+#         c.status_message = 'Welcome! Your password has been reset, and you are now signed in.'
+#        return h.redirect_to("/people/%s/account" % c.username)
+
     def logout(self):
         c.user = User.byUsername('anonymous')
         c.username = ""
@@ -163,39 +188,58 @@ http://localhost:5000/reset-password?key=%s
 
     @dispatch_on(POST='do_login')
     def login(self):
+        c.came_from = request.params.get('came_from', '')
         return self.show_login()
 
     def show_login(self):
-        return render_response('user/show_login.mako')
+        if request.environ.get('REMOTE_USER'):
+            #user is already logged in
+            request.environ['SCRIPT_NAME'] = ""
+            redirect_to("/")
+
+        return render('user/show_login.mako')
 
     @validate(schema=LoginForm(), form='show_login')
     def do_login(self):
-        try:
-            user = User.byUsername(self.form_result['username'])
-        except SQLObjectNotFound:
-            user = None
+        username = self.form_result['username']
+#         try:
+#             user = User.byUsername(username)
+#         except SQLObjectNotFound:
+#             user = None
             
 
-        if not user or not user.check_password(request.params['password']) or not user.confirmed:
-            c.status_message = """Please check your username and password. If you still have trouble, you can <a href="forgot">retrieve your sign in information</a>."""
-            return render_response('user/show_login.mako')
+#         if not user or not user.check_password(request.params['password']) or not user.confirmed:
 
-        session = environ['beaker.session']
-        now = time.time()
+        cookie = confirm_password(username, self.form_result['password'])
+        if not cookie:
+            h.add_status_message("""Please check your username and password. If you still have trouble, you can <a href="forgot">retrieve your sign in information</a>.""")
+            c.came_from = request.params.get('came_from', '')
+            return render('user/show_login.mako')
 
-        if not self.form_result['no_expire_cookie']:
-            session['expiration'] = now + (60 * 60 * 8)
+#         session = environ['beaker.session']
+#         now = time.time()
+
+#         if not self.form_result['no_expire_cookie']:
+#             session['expiration'] = now + (60 * 60 * 8)
             
-        username = session['username']
+#         session['username'] = username
 
-        session['username'] = user.username
-        session.save()
-        
-        response.set_cookie(*cookieauth.make_cookie(user.username))
-        c.user = user
-        user.last_login = datetime.now()
-        c.status_message = "Welcome! You have signed in."
-        #where do I redirect to?  How do I set PSMs?
-        
-        return h.redirect_to(action='account', p_username=user.username)
-        
+#         session.save()
+
+        response = WSGIResponse(code=303)
+
+        came_from = self.form_result.get('came_from')
+        if came_from:
+            came_from += "?status_message=Welcome!+You+have+signed+in."
+            response.headers['Location'] = str(came_from)
+        else:
+            #FIXME: do we need to do something special to send
+            #the user to the tour page on their first login?
+            script_name = request.environ['SCRIPT_NAME']
+            request.environ['SCRIPT_NAME'] = ''
+            response.headers['Location'] = h.url_for(str("/people/%s/account?status_message=Welcome!+You+have+signed+in." % username))
+            request.environ['SCRIPT_NAME'] = script_name
+
+        value = cookie.split("=")[1][1:-1] #strip quotes
+        response.set_cookie("__ac", value)
+        return response

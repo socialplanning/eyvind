@@ -3,9 +3,9 @@
       <div id="oc-content-main">
 
         
-  <form class="oc-boxy" name="login_form" method="post" id="oc-login-form" action="/login">
+  <form class="oc-boxy" name="login_form" method="post" id="oc-login-form" action="${h.url_for("/login")}">
     
-
+    <input type="hidden" name="came_from" value="${c.came_from}" />
     
 
     <fieldset>
