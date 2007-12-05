@@ -12,9 +12,9 @@ OpenPlans Login
 rules once when we simplify markup -->
 <div id="oc-tasktracker-wrapper">
   <div id="oc-statusMessage-container">
-%if c.status_message:
-      <div class="oc-statusMessage oc-js-closeable">${c.status_message|n}</div>
-%endif
+%for message in c.status_message:
+      <div class="oc-statusMessage oc-js-closeable">${message|n}</div>
+%endfor
   </div>
 
     ${ next.body() }

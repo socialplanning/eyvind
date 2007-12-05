@@ -70,7 +70,7 @@ def confirm_password(username, password):
     data = dict(__ac_password = password)
     body = urlencode(data)
     resp, content = h.request(url, method="POST", body=body, redirections=0)
-    if content:
+    if content.startswith("__ac"):
         return content
     else:
         return False
@@ -212,7 +212,10 @@ class UserController(BaseController):
 
         cookie = confirm_password(username, self.form_result['password'])
         if not cookie:
-            h.add_status_message("""Please check your username and password. If you still have trouble, you can <a href="forgot">retrieve your sign in information</a>.""")
+            h.add_status_message('Please check your username and password. '
+                                 'If you still have trouble, you can <a href'
+                                 '="forgot">retrieve your sign in information'
+                                 '</a>.')
             c.came_from = request.params.get('came_from', '')
             return render('user/show_login.mako')
 
@@ -230,14 +233,14 @@ class UserController(BaseController):
 
         came_from = self.form_result.get('came_from')
         if came_from:
-            came_from += "?status_message=Welcome!+You+have+signed+in."
+            came_from += "?portal_status_message=Welcome!+You+have+signed+in."
             response.headers['Location'] = str(came_from)
         else:
             #FIXME: do we need to do something special to send
             #the user to the tour page on their first login?
             script_name = request.environ['SCRIPT_NAME']
             request.environ['SCRIPT_NAME'] = ''
-            response.headers['Location'] = h.url_for(str("/people/%s/account?status_message=Welcome!+You+have+signed+in." % username))
+            response.headers['Location'] = h.url_for(str("/people/%s/account?portal_status_message=Welcome!+You+have+signed+in." % username))
             request.environ['SCRIPT_NAME'] = script_name
 
         value = cookie.split("=")[1][1:-1] #strip quotes

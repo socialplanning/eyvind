@@ -21,14 +21,15 @@ class BaseController(WSGIController):
         # the request is routed to. This routing information is
         # available in environ['pylons.routes_dict']
 
-        try:
-            if not environ['PATH_INFO'].startswith("/error"):
-                c.status_message = session['status_message']
-                del session['status_message']
-                session.save()            
-        except KeyError:
-            pass        
-        return WSGIController.__call__(self, environ, start_response)
+        if not environ['PATH_INFO'].startswith("/error"):
+            if 'portal_status_message' in session:
+                c.status_message = session['portal_status_message']
+                del session['portal_status_message']
+
+        response = WSGIController.__call__(self, environ, start_response)
+
+        session.save () # only save when there is no exception
+        return response
 
 # Include the '_' function in the public names
 __all__ = [__name for __name in locals().keys() if not __name.startswith('_') \

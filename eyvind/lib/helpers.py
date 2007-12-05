@@ -7,7 +7,7 @@ from webhelpers import *
 from pylons import session
 
 def add_status_message(msg):
-    if session["portal_status_message"]:
+    if "portal_status_message" in session:
         session["portal_status_message"].append(msg)
     else:
         session["portal_status_message"] = [msg]
