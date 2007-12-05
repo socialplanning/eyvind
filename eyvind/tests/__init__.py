@@ -28,13 +28,13 @@ pkg_resources.working_set.add_entry(conf_dir)
 pkg_resources.require('Paste')
 pkg_resources.require('PasteScript')
 
-test_file = os.path.join(conf_dir, 'test.ini')
+test_file = os.path.join(conf_dir, 'test.ini#main_app')
 cmd = paste.script.appinstall.SetupCommand('setup-app')
 cmd.run([test_file])
 
 class TestController(TestCase):
 
     def __init__(self, *args, **kwargs):
-        wsgiapp = loadapp('config:test.ini', relative_to=conf_dir)
+        wsgiapp = loadapp('config:test.ini#main_app', relative_to=conf_dir)
         self.app = paste.fixture.TestApp(wsgiapp)
         TestCase.__init__(self, *args, **kwargs)

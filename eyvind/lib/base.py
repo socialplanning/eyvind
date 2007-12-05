@@ -20,7 +20,7 @@ class BaseController(WSGIController):
         # WSGIController.__call__ dispatches to the Controller method
         # the request is routed to. This routing information is
         # available in environ['pylons.routes_dict']
-
+        c.status_message = []
         if not environ['PATH_INFO'].startswith("/error"):
             if 'portal_status_message' in session:
                 c.status_message = session['portal_status_message']

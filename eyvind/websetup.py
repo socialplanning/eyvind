@@ -10,5 +10,5 @@ log = logging.getLogger(__name__)
 
 def setup_config(command, filename, section, vars):
     """Place any commands to setup eyvind here"""
-    conf = appconfig('config:' + filename)
+    conf = appconfig('config:' + filename + "#main_app")
     load_environment(conf.global_conf, conf.local_conf)

@@ -212,10 +212,10 @@ class UserController(BaseController):
 
         cookie = confirm_password(username, self.form_result['password'])
         if not cookie:
-            h.add_status_message('Please check your username and password. '
-                                 'If you still have trouble, you can <a href'
-                                 '="forgot">retrieve your sign in information'
-                                 '</a>.')
+            c.status_message.append ('Please check your username and password.'
+                                     ' If you still have trouble, you can <a '
+                                     'href="forgot">retrieve your sign in '
+                                     'information</a>.')
             c.came_from = request.params.get('came_from', '')
             return render('user/show_login.mako')
 
