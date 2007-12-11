@@ -7,6 +7,10 @@ from webhelpers import *
 from pylons import session
 
 def add_status_message(msg):
+    """
+    At present, this only adds PSMs that work inside Eyvind.  TODO:
+    Use general PSM infrastructure.
+    """
     if "portal_status_message" in session:
         session["portal_status_message"].append(msg)
     else:

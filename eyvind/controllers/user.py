@@ -179,6 +179,9 @@ class UserController(BaseController):
 #        return h.redirect_to("/people/%s/account" % c.username)
 
     def logout(self):
+        """
+        Log the user out.
+        """
         c.user = User.byUsername('anonymous')
         c.username = ""
         response.set_cookie(*cookieauth.logout())
@@ -188,10 +191,16 @@ class UserController(BaseController):
 
     @dispatch_on(POST='do_login')
     def login(self):
+        """
+        The general handler for the login page
+        """
         c.came_from = request.params.get('came_from', '')
         return self.show_login()
 
     def show_login(self):
+        """
+        Display the login page.
+        """
         if request.environ.get('REMOTE_USER'):
             #user is already logged in
             request.environ['SCRIPT_NAME'] = ""
@@ -201,6 +210,9 @@ class UserController(BaseController):
 
     @validate(schema=LoginForm(), form='show_login')
     def do_login(self):
+        """
+        Set the appropriate cookies to log a user in.
+        """
         username = self.form_result['username']
 #         try:
 #             user = User.byUsername(username)

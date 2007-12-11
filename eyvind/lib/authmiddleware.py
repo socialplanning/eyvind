@@ -1,3 +1,4 @@
+# Future plans:
 # Eyvind authentication middleware.  Eyvind checks TeamRoller's
 # database to determine if a user can log in.
 
@@ -57,11 +58,23 @@ def get_secret(conf):
     return secret
 
 class _AuthenticationMiddleware(object):
+    """
+This middleware reads a cookie which is set by the Eyvind application,
+and sets a signed REMOTE_USER header so that downstream applications
+don't need to deal with authentication.
+    """
     def __init__(self, app, app_conf):
+        """
+        The application configuration should contain
+        topp_secret_filename (for now; this will change).
+        """
         self.app = app
         self.secret = get_secret(app_conf)
         
     def authenticate(self, environ):
+        """
+        Authenticate a user from a request.
+        """
         try:
             cookie = BaseCookie(environ['HTTP_COOKIE'])
             morsel = cookie['__ac']
