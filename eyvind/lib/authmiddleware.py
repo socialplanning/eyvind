@@ -47,11 +47,16 @@ from Cookie import BaseCookie
 
 from signedheaders import add_signed_header
 
+from logging import error
+
+from sys import exit
+
 def get_secret(conf):
     try:
         secret_filename = conf['topp_secret_filename']
     except KeyError:
-        return '' #no secret, so all auth will fail
+        error("topp_secret_filename not set.  Auth will fail.")
+        exit(1) 
     f = open(secret_filename)
     secret = f.readline().strip()
     f.close()
