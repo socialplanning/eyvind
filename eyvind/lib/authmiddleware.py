@@ -33,6 +33,7 @@
 
 from paste.wsgilib import intercept_output
 from paste.request import construct_url
+from paste.response import header_value
 
 from beaker.middleware import SessionMiddleware
 
@@ -117,6 +118,11 @@ don't need to deal with authentication.
 
         
     def needs_redirection(self, status, headers):
+        ## FIXME: this isn't well specified nor its semantics specified:
+        ignore = header_value(headers, 'X-Eyvind-Handling') or ''
+        if ignore.lower() == 'ignore':
+            return False
+        ## FIXME: why redirect 403?
         return status.startswith('401') or status.startswith('403')
 
     def __call__(self, environ, start_response):
@@ -127,6 +133,10 @@ don't need to deal with authentication.
         #set up environ['REMOTE_USER']
         self.authenticate(environ)
 
+        req_with = environ.get('HTTP_X_REQUESTED_WITH', '').lower()
+        if req_with == 'xmlhttprequest':
+            # Don't intercept output
+            return self.app(environ, start_response)
         status, headers, body = intercept_output(environ, self.app, self.needs_redirection, start_response)
             
         if status and status.startswith("401"):
