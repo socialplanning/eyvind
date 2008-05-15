@@ -2,7 +2,7 @@ import os
 import paste
 import urllib
 
-from eyvind.lib.authmiddleware import AuthenticationMiddleware, get_secret
+from eyvind.lib.authmiddleware import make_auth_middleware, get_secret
 from signedheaders import HeaderSignatureCheckingMiddleware
 
 secret_filename = os.path.join(os.path.dirname(__file__), 'secret')
@@ -15,7 +15,7 @@ def un_app(environ, start_response):
 
 def get_app():
     app = HeaderSignatureCheckingMiddleware(un_app, secret)
-    app = AuthenticationMiddleware(app, conf)
+    app = make_auth_middleware(app, conf)
     app = paste.fixture.TestApp(app)
     return app
 

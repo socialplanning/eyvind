@@ -153,6 +153,6 @@ don't need to deal with authentication.
         else:
             return body
 
-def AuthenticationMiddleware(app, app_conf):
+def make_auth_middleware(app, app_conf):
     return SessionMiddleware(_AuthenticationMiddleware(app, app_conf))
 
