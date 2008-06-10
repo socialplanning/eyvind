@@ -52,6 +52,8 @@ from logging import error
 
 from sys import exit
 
+from exceptions import BadCookieError
+
 def get_secret(conf):
     try:
         secret_filename = conf['topp_secret_filename']
