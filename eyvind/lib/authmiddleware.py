@@ -52,8 +52,6 @@ from logging import error
 
 from sys import exit
 
-from exceptions import BadCookieError
-
 def get_secret(conf):
     try:
         secret_filename = conf['topp_secret_filename']
@@ -93,7 +91,8 @@ don't need to deal with authentication.
             username, auth = base64.decodestring(unquote(morsel.value)).split("\0")
 
         except ValueError:
-            raise BadCookieError
+            del environ['HTTP_COOKIE']
+            return False
 
         if not auth == hmac.new(self.secret, username, sha).hexdigest():
             return False
