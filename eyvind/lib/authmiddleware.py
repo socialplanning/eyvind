@@ -117,15 +117,6 @@ don't need to deal with authentication.
 #         session.save()
 
 
-        
-    def needs_redirection(self, status, headers):
-        ## FIXME: this isn't well specified nor its semantics specified:
-        ignore = header_value(headers, 'X-Eyvind-Handling') or ''
-        if ignore.lower() == 'ignore':
-            return False
-        ## FIXME: why redirect 403?
-        return status.startswith('401') or status.startswith('403')
-
     def __call__(self, environ, start_response):
         
         if environ['PATH_INFO'].strip("/").startswith("_debug"):
@@ -134,25 +125,7 @@ don't need to deal with authentication.
         #set up environ['REMOTE_USER']
         self.authenticate(environ)
 
-        req_with = environ.get('HTTP_X_REQUESTED_WITH', '').lower()
-        if req_with == 'xmlhttprequest':
-            # Don't intercept output
-            return self.app(environ, start_response)
-        status, headers, body = intercept_output(environ, self.app, self.needs_redirection, start_response)
-            
-        if status and status.startswith("401"):
-            url = construct_url(environ)
-            location = '/auth/login?came_from=%s' % quote(url)
-        else:
-            location = "/?portal_status_message=You+have+insufficient+privileges."
-            
-        if status:
-            status = "303 See Other"
-            headers = [('Location', location), ('Content-Type', 'text/html')]
-            start_response(status, headers)
-            return []
-        else:
-            return body
+        return self.app(environ, start_response)
 
 def make_auth_middleware(app, app_conf):
     return SessionMiddleware(_AuthenticationMiddleware(app, app_conf))
