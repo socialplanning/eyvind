@@ -13,7 +13,9 @@ setup(
     author_email='novalis@openplans.org',
     license = "GPLv3 or any later version",
     #url='',
-    install_requires=["Pylons==0.9.6.2", "signedheaders", "wsgi_intercept",
+    install_requires=["Pylons==0.9.6.2", 
+                      "signedheaders",
+                      "wsgi_intercept",
                       "httplib2"],
     packages=find_packages(exclude=['ez_setup']),
     include_package_data=True,
@@ -23,9 +25,6 @@ setup(
     #        ('**.py', 'python', None),
     #        ('templates/**.mako', 'mako', None),
     #        ('public/**', 'ignore', None)]},
-    dependency_links = [
-      "https://svn.openplans.org/svn/signedheaders/trunk#egg=signedheaders-dev",
-      ],    
     entry_points="""
     [paste.app_factory]
     main = eyvind.config.middleware:make_app
